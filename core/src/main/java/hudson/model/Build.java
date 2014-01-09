@@ -103,7 +103,12 @@ public abstract class Build <P extends Project<P,B>,B extends Build<P,B>>
         super(project,buildDir);
     }
 
-//
+    public Build() throws IOException {
+        super();
+
+    }
+
+    //
 //
 // actions
 //

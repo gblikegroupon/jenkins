@@ -169,6 +169,11 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
     private volatile transient BuildReference<R> previousBuild, nextBuild;
 
     @SuppressWarnings({"unchecked", "rawtypes"}) private static final BuildReference NONE = new BuildReference("NONE", null);
+
+    public AbstractBuild() throws IOException {
+        super();
+    }
+
     @SuppressWarnings("unchecked") private BuildReference<R> none() {return NONE;}
 
     @Transient

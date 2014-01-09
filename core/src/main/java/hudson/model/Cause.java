@@ -34,6 +34,8 @@ import jenkins.model.Jenkins;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import org.springframework.data.annotation.Transient;
+
 import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.CheckForNull;
@@ -97,6 +99,7 @@ public abstract class Cause {
      * @deprecated since 2009-02-08
      */
     public static class LegacyCodeCause extends Cause {
+        @Transient //TODO figure out how to deserialize from mongo - Marked transient for simplicity
         private StackTraceElement [] stackTrace;
         public LegacyCodeCause() {
             stackTrace = new Exception().getStackTrace();

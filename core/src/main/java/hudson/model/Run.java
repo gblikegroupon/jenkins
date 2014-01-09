@@ -126,6 +126,7 @@ import jenkins.model.StandardArtifactManager;
 import jenkins.model.RunAction2;
 import jenkins.util.VirtualFile;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -189,7 +190,6 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     /**
      * When the build is scheduled.
      */
-    @Transient
     protected transient final long timestamp;
 
     /**
@@ -294,6 +294,11 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
                 }
             };
 
+    @PersistenceConstructor
+    protected Run() throws IOException {
+        this.project = null;
+        this.timestamp = 0L;
+    }
     /**
      * Creates a new {@link Run}.
      */

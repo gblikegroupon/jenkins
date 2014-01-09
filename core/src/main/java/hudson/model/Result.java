@@ -34,6 +34,7 @@ import org.kohsuke.args4j.OptionDef;
 import org.kohsuke.args4j.spi.*;
 import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.export.CustomExportedBean;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -91,7 +92,7 @@ public final class Result implements Serializable, CustomExportedBean {
      */
     public final boolean completeBuild;
 
-    private Result(String name, BallColor color, int ordinal, boolean complete) {
+    private Result(String name, BallColor color, int ordinal, @Value("completeBuild") boolean complete) {
         this.name = name;
         this.color = color;
         this.ordinal = ordinal;

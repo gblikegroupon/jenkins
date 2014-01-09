@@ -25,6 +25,7 @@ package hudson.model;
 
 import hudson.slaves.WorkspaceList;
 import hudson.slaves.WorkspaceList.Lease;
+import org.springframework.data.annotation.PersistenceConstructor;
 
 import java.io.IOException;
 import java.io.File;
@@ -33,6 +34,12 @@ import java.io.File;
  * @author Kohsuke Kawaguchi
  */
 public class FreeStyleBuild extends Build<FreeStyleProject,FreeStyleBuild> {
+
+    @PersistenceConstructor
+    protected FreeStyleBuild() throws IOException {
+        super();
+    }
+
     public FreeStyleBuild(FreeStyleProject project) throws IOException {
         super(project);
     }

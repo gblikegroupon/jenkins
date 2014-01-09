@@ -38,6 +38,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import jenkins.model.RunAction2;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.annotation.PersistenceConstructor;
 
 @ExportedBean
 public class CauseAction implements FoldableAction, RunAction2 {
@@ -58,6 +60,7 @@ public class CauseAction implements FoldableAction, RunAction2 {
    		this(Arrays.asList(c));
    	}
 
+    @PersistenceConstructor
     public CauseAction(Collection<? extends Cause> causes) {
    		this.causes.addAll(causes);
    	}
