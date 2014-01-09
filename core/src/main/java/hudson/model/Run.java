@@ -125,6 +125,10 @@ import jenkins.model.PeepholePermalink;
 import jenkins.model.StandardArtifactManager;
 import jenkins.model.RunAction2;
 import jenkins.util.VirtualFile;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.DBRef;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 /**
  * A particular execution of {@link Job}.
@@ -138,9 +142,11 @@ import jenkins.util.VirtualFile;
  * @see RunListener
  */
 @ExportedBean
+@Document
 public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,RunT>>
         extends Actionable implements ExtensionPoint, Comparable<RunT>, AccessControlled, PersistenceRoot, DescriptorByNameOwner, OnMaster {
 
+    @Transient
     protected transient final JobT project;
 
     /**
@@ -150,6 +156,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * In earlier versions &lt; 1.24, this number is not unique nor continuous,
      * but going forward, it will, and this really replaces the build id.
      */
+    @Id
     public /*final*/ int number;
 
     /**
@@ -158,6 +165,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      *
      * External code should use {@link #getPreviousBuild()}
      */
+    @Transient
     @Restricted(NoExternalUse.class)
     protected volatile transient RunT previousBuild;
 
@@ -166,6 +174,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      *
      * External code should use {@link #getNextBuild()}
      */
+    @Transient
     @Restricted(NoExternalUse.class)
     protected volatile transient RunT nextBuild;
 
@@ -174,11 +183,13 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * so it may point to the build that's already completed. This pointer is set to 'this'
      * if the computation determines that everything earlier than this build is already completed.
      */
+    @Transient
     /* does not compile on JDK 7: private*/ volatile transient RunT previousBuildInProgress;
 
     /**
      * When the build is scheduled.
      */
+    @Transient
     protected transient final long timestamp;
 
     /**
@@ -211,6 +222,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     /**
      * The current build state.
      */
+    @Transient
     protected volatile transient State state;
 
     private static enum State {
@@ -262,6 +274,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * If the build is in progress, remember {@link RunExecution} that's running it.
      * This field is not persisted.
      */
+    @Transient
     private volatile transient RunExecution runner;
 
     /**
@@ -1844,6 +1857,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      */
     public synchronized void save() throws IOException {
         if(BulkChange.contains(this))   return;
+
         getDataFile().write(this);
         SaveableListener.fireOnChange(this, getDataFile());
     }

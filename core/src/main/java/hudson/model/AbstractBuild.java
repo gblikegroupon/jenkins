@@ -65,6 +65,7 @@ import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
+import org.springframework.data.annotation.Transient;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletException;
@@ -133,6 +134,7 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
     /**
      * Changes in this build.
      */
+    @Transient
     private volatile transient WeakReference<ChangeLogSet<? extends Entry>> changeSet;
 
     /**
@@ -169,6 +171,7 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
     @SuppressWarnings({"unchecked", "rawtypes"}) private static final BuildReference NONE = new BuildReference("NONE", null);
     @SuppressWarnings("unchecked") private BuildReference<R> none() {return NONE;}
 
+    @Transient
     /*package*/ final transient BuildReference<R> selfReference = new BuildReference<R>(getId(),_this());
 
 
@@ -841,6 +844,7 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
 	/*
      * No need to to lock the entire AbstractBuild on change set calculcation
      */
+    @Transient
     private transient Object changeSetLock = new Object();
     
     /**
