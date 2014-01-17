@@ -192,6 +192,7 @@ import jenkins.ExtensionComponentSet;
 import jenkins.ExtensionRefreshException;
 import jenkins.InitReactorRunner;
 import jenkins.model.ProjectNamingStrategy.DefaultProjectNamingStrategy;
+import jenkins.model.repositories.RunRepository;
 import jenkins.security.ConfidentialKey;
 import jenkins.security.ConfidentialStore;
 import jenkins.slaves.WorkspaceLocator;
@@ -238,6 +239,8 @@ import org.kohsuke.stapler.framework.adjunct.AdjunctManager;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.jelly.JellyClassLoaderTearOff;
 import org.kohsuke.stapler.jelly.JellyRequestDispatcher;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.xml.sax.InputSource;
 
 import javax.crypto.SecretKey;
@@ -358,6 +361,8 @@ public class Jenkins extends AbstractCIBase implements ModifiableTopLevelItemGro
      * Never null.
      */
     private volatile AuthorizationStrategy authorizationStrategy = AuthorizationStrategy.UNSECURED;
+
+    private transient RunRepository runRepository;
 
     /**
      * Controls a part of the
@@ -805,6 +810,8 @@ public class Jenkins extends AbstractCIBase implements ModifiableTopLevelItemGro
 
             adjuncts = new AdjunctManager(servletContext, pluginManager.uberClassLoader,"adjuncts/"+SESSION_HASH, TimeUnit2.DAYS.toMillis(365));
 
+            initializeMongoDbResources();
+
             // initialization consists of ...
             executeReactor( is,
                     pluginManager.initTasks(is),    // loading and preparing plugins
@@ -870,6 +877,15 @@ public class Jenkins extends AbstractCIBase implements ModifiableTopLevelItemGro
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private void initializeMongoDbResources() {
+        ApplicationContext ctx = new ClassPathXmlApplicationContext(new String[] {"spring.xml"});
+        runRepository = ctx.getBean(RunRepository.class);
+    }
+
+    public RunRepository getRunRepository() {
+        return runRepository;
     }
 
     /**

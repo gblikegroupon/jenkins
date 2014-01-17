@@ -36,8 +36,8 @@ import java.io.File;
 public class FreeStyleBuild extends Build<FreeStyleProject,FreeStyleBuild> {
 
     @PersistenceConstructor
-    protected FreeStyleBuild() throws IOException {
-        super();
+    protected FreeStyleBuild(String projectId) throws IOException {
+        super(projectId);
     }
 
     public FreeStyleBuild(FreeStyleProject project) throws IOException {

@@ -125,11 +125,13 @@ import jenkins.model.PeepholePermalink;
 import jenkins.model.StandardArtifactManager;
 import jenkins.model.RunAction2;
 import jenkins.util.VirtualFile;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.PersistenceConstructor;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 /**
  * A particular execution of {@link Job}.
@@ -145,11 +147,13 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ExportedBean
 @Document
 public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,RunT>>
-        extends Actionable implements ExtensionPoint, Comparable<RunT>, AccessControlled, PersistenceRoot, DescriptorByNameOwner, OnMaster {
+        extends Actionable implements ExtensionPoint, Comparable<RunT>, AccessControlled, PersistenceRoot, DescriptorByNameOwner, OnMaster, Saveable {
 
     @Transient
     protected transient final JobT project;
+    private String projectId;
 
+    public int test;
     /**
      * Build number.
      *
@@ -157,8 +161,10 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * In earlier versions &lt; 1.24, this number is not unique nor continuous,
      * but going forward, it will, and this really replaces the build id.
      */
-    @Id
     public /*final*/ int number;
+
+
+    public String id;
 
     /**
      * Previous build. Can be null.
@@ -190,6 +196,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     /**
      * When the build is scheduled.
      */
+    @Transient
     protected transient final long timestamp;
 
     /**
@@ -295,8 +302,9 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
             };
 
     @PersistenceConstructor
-    protected Run() throws IOException {
-        this.project = null;
+    protected Run(String projectId) throws IOException {
+
+        this.project = (JobT)temp;
         this.timestamp = 0L;
     }
     /**
@@ -305,6 +313,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     protected Run(JobT job) throws IOException {
         this(job, new GregorianCalendar());
         this.number = project.assignBuildNumber();
+
     }
 
     /**
@@ -317,9 +326,10 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
 
     protected Run(JobT job, long timestamp) {
         this.project = job;
+        this.projectId = project.getName();
         this.timestamp = timestamp;
         this.state = State.NOT_STARTED;
-		getRootDir().mkdirs();
+ 		getRootDir().mkdirs();
     }
 
     /**

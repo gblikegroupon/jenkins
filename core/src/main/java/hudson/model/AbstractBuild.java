@@ -170,8 +170,8 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
 
     @SuppressWarnings({"unchecked", "rawtypes"}) private static final BuildReference NONE = new BuildReference("NONE", null);
 
-    public AbstractBuild() throws IOException {
-        super();
+    public AbstractBuild(String projectId) throws IOException {
+        super(projectId);
     }
 
     @SuppressWarnings("unchecked") private BuildReference<R> none() {return NONE;}

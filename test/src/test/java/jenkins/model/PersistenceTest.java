@@ -27,9 +27,8 @@ public class PersistenceTest {
     /* configuration for this test has a mongotemplate defined */
     @Test
     public void testBuildMongoPersistence() throws Exception {
-        ApplicationContext ctx = new ClassPathXmlApplicationContext(new String[] {"spring.xml"});
-        repository = (RunRepository) ctx.getBean(RunRepository.class);
-
+        repository = Jenkins.getInstance().getRunRepository();
+        repository.deleteAll();
         FreeStyleProject job = j.createFreeStyleProject("test1");
         assertNotNull(job);
         j.buildAndAssertSuccess(job);
@@ -39,5 +38,6 @@ public class PersistenceTest {
 
         List<Run> runs = repository.findAll();
         assertTrue("Did not find any Runs", runs.size() > 0);
+        //assertEquals("Did not set value test", 22, runs.get(0).test);
     }
 }
