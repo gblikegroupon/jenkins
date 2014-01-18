@@ -64,6 +64,7 @@ import org.kohsuke.stapler.Stapler;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
+import org.mongodb.morphia.annotations.Transient;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletException;
@@ -132,6 +133,7 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
     /**
      * Changes in this build.
      */
+    @Transient
     private volatile transient WeakReference<ChangeLogSet<? extends Entry>> changeSet;
 
     /**
@@ -153,6 +155,7 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
      * During the build this field remembers {@link hudson.tasks.BuildWrapper.Environment}s created by
      * {@link BuildWrapper}. This design is bit ugly but forced due to compatibility.
      */
+    @Transient
     protected transient List<Environment> buildEnvironments;
 
     /**
@@ -163,14 +166,14 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
      * {@link Run#previousBuild} and {@link Run#nextBuild}, and instead use these
      * fields and point to {@link #selfReference} (or {@link #none}) of adjacent builds.
      */
+    @Transient
     private volatile transient BuildReference<R> previousBuild, nextBuild;
 
     @SuppressWarnings({"unchecked", "rawtypes"}) private static final BuildReference NONE = new BuildReference("NONE", null);
     @SuppressWarnings("unchecked") private BuildReference<R> none() {return NONE;}
 
+    @Transient
     /*package*/ final transient BuildReference<R> selfReference = new BuildReference<R>(getId(),_this());
-
-
 
     protected AbstractBuild(P job) throws IOException {
         super(job);
@@ -840,6 +843,7 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
 	/*
      * No need to to lock the entire AbstractBuild on change set calculcation
      */
+    @Transient
     private transient Object changeSetLock = new Object();
     
     /**

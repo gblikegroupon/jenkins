@@ -125,6 +125,9 @@ import jenkins.model.PeepholePermalink;
 import jenkins.model.StandardArtifactManager;
 import jenkins.model.RunAction2;
 import jenkins.util.VirtualFile;
+import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Reference;
+import org.mongodb.morphia.annotations.Transient;
 
 /**
  * A particular execution of {@link Job}.
@@ -138,9 +141,10 @@ import jenkins.util.VirtualFile;
  * @see RunListener
  */
 @ExportedBean
+@Entity("run")
 public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,RunT>>
         extends Actionable implements ExtensionPoint, Comparable<RunT>, AccessControlled, PersistenceRoot, DescriptorByNameOwner, OnMaster {
-
+    @Reference(lazy=true)
     protected transient final JobT project;
 
     /**
@@ -159,6 +163,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * External code should use {@link #getPreviousBuild()}
      */
     @Restricted(NoExternalUse.class)
+    @Reference(lazy=true)
     protected volatile transient RunT previousBuild;
 
     /**
@@ -167,6 +172,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * External code should use {@link #getNextBuild()}
      */
     @Restricted(NoExternalUse.class)
+    @Reference(lazy=true)
     protected volatile transient RunT nextBuild;
 
     /**
@@ -174,11 +180,13 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * so it may point to the build that's already completed. This pointer is set to 'this'
      * if the computation determines that everything earlier than this build is already completed.
      */
+    @Reference(lazy=true)
     /* does not compile on JDK 7: private*/ volatile transient RunT previousBuildInProgress;
 
     /**
      * When the build is scheduled.
      */
+    @Transient
     protected transient final long timestamp;
 
     /**
@@ -211,6 +219,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     /**
      * The current build state.
      */
+    @Transient
     protected volatile transient State state;
 
     private static enum State {

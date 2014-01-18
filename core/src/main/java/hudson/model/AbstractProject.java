@@ -144,6 +144,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Base implementation of {@link Job}s that build software.
@@ -181,6 +182,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
      */
     @Restricted(NoExternalUse.class)
     @SuppressWarnings("deprecation") // [JENKINS-15156] builds accessed before onLoad or onCreatedFromScratch called
+    @Transient
     protected transient RunMap<R> builds = new RunMap<R>();
 
     /**

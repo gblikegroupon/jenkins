@@ -62,6 +62,7 @@ import org.kohsuke.stapler.HttpDeletable;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.mongodb.morphia.annotations.Transient;
 
 import javax.servlet.ServletException;
 import javax.xml.transform.Source;
@@ -92,6 +93,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      */
     protected volatile String description;
 
+    @Transient
     private transient ItemGroup parent;
     
     protected String displayName;

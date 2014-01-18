@@ -91,6 +91,7 @@ public final class Result implements Serializable, CustomExportedBean {
      */
     public final boolean completeBuild;
 
+
     private Result(String name, BallColor color, int ordinal, boolean complete) {
         this.name = name;
         this.color = color;

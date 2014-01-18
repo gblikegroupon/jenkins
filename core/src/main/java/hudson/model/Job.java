@@ -70,6 +70,7 @@ import jenkins.util.io.OnMaster;
 import net.sf.json.JSONException;
 import net.sf.json.JSONObject;
 
+import org.bson.types.ObjectId;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.CategoryAxis;
@@ -88,6 +89,9 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.Transient;
 
 import javax.servlet.ServletException;
 
@@ -110,9 +114,12 @@ import static javax.servlet.http.HttpServletResponse.*;
  *
  * @author Kohsuke Kawaguchi
  */
+@Entity("job")
 public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, RunT>>
         extends AbstractItem implements ExtensionPoint, StaplerOverridable, OnMaster {
 
+    @Id
+    private ObjectId id = new ObjectId();
     /**
      * Next build number. Kept in a separate file because this is the only
      * information that gets updated often. This allows the rest of the
@@ -121,12 +128,14 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
      * In 1.28 and earlier, this field was stored in the project configuration
      * file, so even though this is marked as transient, don't move it around.
      */
+    @Transient
     protected transient volatile int nextBuildNumber = 1;
 
     /**
      * Newly copied jobs get this flag set, so that Hudson doesn't try to run the job until its configuration
      * is saved once.
      */
+    @Transient
     private transient volatile boolean holdOffBuildUntilSave;
 
     /**
@@ -134,6 +143,7 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
      * {@link #holdOffBuildUntilSave} prematurely. The {@link LastItemListener} is responsible for
      * clearing this flag as the last item listener.
      */
+    @Transient
     private transient volatile boolean holdOffBuildUntilUserSave;
 
     private volatile BuildDiscarder logRotator;
@@ -143,7 +153,9 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
      * These fields are used to cache the health reports to speed up rendering
      * the main page.
      */
+    @Transient
     private transient Integer cachedBuildHealthReportsBuildNumber = null;
+    @Transient
     private transient List<HealthReport> cachedBuildHealthReports = null;
 
     private boolean keepDependencies;
@@ -152,6 +164,7 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
      * List of {@link UserProperty}s configured for this project.
      */
     // this should have been DescribableList but now it's too late
+    @Transient
     protected CopyOnWriteList<JobProperty<? super JobT>> properties = new CopyOnWriteList<JobProperty<? super JobT>>();
 
     protected Job(ItemGroup parent, String name) {
