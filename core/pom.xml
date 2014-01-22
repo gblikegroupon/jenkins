@@ -93,6 +93,11 @@ THE SOFTWARE.
       <artifactId>guice</artifactId>
       <classifier>no_aop</classifier>
     </dependency>
+    <dependency>
+      <groupId>org.objenesis</groupId>
+      <artifactId>objenesis</artifactId>
+      <version>1.2</version>
+    </dependency>
 
     <dependency>
       <groupId>org.mongodb</groupId>

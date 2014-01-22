@@ -1,7 +1,8 @@
 package jenkins.model.morphia;
 
 import org.mongodb.morphia.mapping.MappingException;
-import sun.reflect.ReflectionFactory;
+import org.objenesis.Objenesis;
+import org.objenesis.ObjenesisStd;
 import java.lang.reflect.Constructor;
 
 import org.mongodb.morphia.mapping.DefaultCreator;
@@ -12,6 +13,12 @@ import org.mongodb.morphia.mapping.DefaultCreator;
  */
 
 public class CustomMorphiaObjectFactory extends DefaultCreator {
+    Objenesis objenesis;
+    public CustomMorphiaObjectFactory(){
+        this.objenesis = new ObjenesisStd();
+    }
+
+
     @Override
     public Object createInstance(Class clazz) {
         try {
@@ -20,7 +27,7 @@ public class CustomMorphiaObjectFactory extends DefaultCreator {
                 return constructor.newInstance();
             }
             try {
-                return ReflectionFactory.getReflectionFactory().newConstructorForSerialization(clazz, Object.class.getDeclaredConstructor(null)).newInstance(null);
+                return objenesis.newInstance(clazz);
             } catch (Exception e) {
                 throw new MappingException("Failed to instantiate " + clazz.getName(), e);
             }
