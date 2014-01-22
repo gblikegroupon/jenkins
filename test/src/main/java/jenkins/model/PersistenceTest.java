@@ -1,16 +1,14 @@
 package jenkins.model;
 
 import hudson.model.FreeStyleBuild;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.FreeStyleProject;
-import jenkins.model.morphia.CustomMorphiaObjectFactory;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.Mapper;
-
+import org.mongodb.morphia.query.Query;
 
 import java.util.List;
 
@@ -23,7 +21,9 @@ public class PersistenceTest {
     /* configuration for this test has a mongotemplate defined */
     @Test
     public void testBuildMongoPersistence() throws Exception {
-
+        Datastore ds = Jenkins.getInstance().getDatastore();
+        ds.delete(ds.createQuery(Run.class));
+        ds.delete(ds.createQuery(Job.class));
 
         FreeStyleProject job = j.createFreeStyleProject("test1");
         assertNotNull(job);
@@ -31,16 +31,13 @@ public class PersistenceTest {
         FreeStyleBuild build = job.getBuildByNumber(1);
         assertNotNull(build);
 
-        Morphia morphia = new Morphia();
-        Mapper mapper = morphia.getMapper();
-        mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
-
-        Datastore ds = morphia.createDatastore("test");
-        ds.save(build.getProject());
-        ds.save(build);
+        //ds.save(build.getProject());
+        //ds.save(build);
         List<Run> runs = ds.find(Run.class).asList();
+        List<Job> jobs = ds.find(Job.class).asList();
 
         assertTrue("Did not find any Runs", runs.size() > 0);
+        assertTrue("Did not find any Jobs", jobs.size() > 0);
         //assertEquals("Did not set value test", 22, runs.get(0).test);
     }
 }

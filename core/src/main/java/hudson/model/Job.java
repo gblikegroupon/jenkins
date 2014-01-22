@@ -173,7 +173,7 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
 
     @Override
     public synchronized void save() throws IOException {
-        super.save();
+        Jenkins.getInstance().getDatastore().save(this);
         holdOffBuildUntilSave = holdOffBuildUntilUserSave;
     }
 

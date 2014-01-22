@@ -192,6 +192,7 @@ import jenkins.ExtensionComponentSet;
 import jenkins.ExtensionRefreshException;
 import jenkins.InitReactorRunner;
 import jenkins.model.ProjectNamingStrategy.DefaultProjectNamingStrategy;
+import jenkins.model.morphia.CustomMorphiaObjectFactory;
 import jenkins.security.ConfidentialKey;
 import jenkins.security.ConfidentialStore;
 import jenkins.slaves.WorkspaceLocator;
@@ -238,6 +239,9 @@ import org.kohsuke.stapler.framework.adjunct.AdjunctManager;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.jelly.JellyClassLoaderTearOff;
 import org.kohsuke.stapler.jelly.JellyRequestDispatcher;
+import org.mongodb.morphia.Datastore;
+import org.mongodb.morphia.Morphia;
+import org.mongodb.morphia.mapping.Mapper;
 import org.xml.sax.InputSource;
 
 import javax.crypto.SecretKey;
@@ -359,6 +363,8 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
      * Never null.
      */
     private volatile AuthorizationStrategy authorizationStrategy = AuthorizationStrategy.UNSECURED;
+
+    private transient Datastore datastore;
 
     /**
      * Controls a part of the
@@ -805,6 +811,13 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
             WebApp.get(servletContext).setClassLoader(pluginManager.uberClassLoader);
 
             adjuncts = new AdjunctManager(servletContext, pluginManager.uberClassLoader,"adjuncts/"+SESSION_HASH, TimeUnit2.DAYS.toMillis(365));
+
+
+            //Fongo fongo = new Fongo("mongo_server_1");
+            Morphia morphia = new Morphia();
+            Mapper mapper = morphia.getMapper();
+            mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
+            datastore = morphia.createDatastore("test");
 
             // initialization consists of ...
             executeReactor( is,
@@ -2195,6 +2208,8 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
     public AuthorizationStrategy getAuthorizationStrategy() {
         return authorizationStrategy;
     }
+
+    public Datastore getDatastore() { return datastore; }
     
     /**
      * The strategy used to check the project names.

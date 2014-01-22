@@ -219,7 +219,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     /**
      * The current build state.
      */
-    @Transient
+
     protected volatile transient State state;
 
     private static enum State {
@@ -271,6 +271,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * If the build is in progress, remember {@link RunExecution} that's running it.
      * This field is not persisted.
      */
+    @Transient
     private volatile transient RunExecution runner;
 
     /**
@@ -1845,7 +1846,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      */
     public synchronized void save() throws IOException {
         if(BulkChange.contains(this))   return;
-        getDataFile().write(this);
+        Jenkins.getInstance().getDatastore().save(this);
         SaveableListener.fireOnChange(this, getDataFile());
     }
 

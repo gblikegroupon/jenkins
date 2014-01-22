@@ -169,6 +169,10 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      */
     @WithBridgeMethods(value=Jenkins.class,castRequired=true)
     @Override public @Nonnull ItemGroup getParent() {
+        // TODO save jenkins as possible parent in mongo
+        if(parent == null) { // assume it was stored in Mongo and set Jenkins as parent
+            this.parent = Jenkins.getInstance();
+        }
         if (parent == null) {
             throw new IllegalStateException("no parent set on " + getClass().getName() + "[" + name + "]");
         }
