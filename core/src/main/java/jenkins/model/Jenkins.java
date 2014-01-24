@@ -28,6 +28,7 @@ package jenkins.model;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
+import com.mongodb.Mongo;
 import hudson.ExtensionComponent;
 import hudson.ExtensionFinder;
 import hudson.init.*;
@@ -382,6 +383,11 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
      * @see #setSecurityRealm(SecurityRealm)
      */
     private volatile SecurityRealm securityRealm = SecurityRealm.NO_AUTHENTICATION;
+
+    public String dbHost = "localhost";
+    public int dbPort = 27017;
+    public String dbName = "test";
+    public boolean fongo = false;
 
     /**
      * Disables the remember me on this computer option in the standard login screen.
@@ -811,13 +817,6 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
             WebApp.get(servletContext).setClassLoader(pluginManager.uberClassLoader);
 
             adjuncts = new AdjunctManager(servletContext, pluginManager.uberClassLoader,"adjuncts/"+SESSION_HASH, TimeUnit2.DAYS.toMillis(365));
-
-
-            //Fongo fongo = new Fongo("mongo_server_1");
-            Morphia morphia = new Morphia();
-            Mapper mapper = morphia.getMapper();
-            mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
-            datastore = morphia.createDatastore("test");
 
             // initialization consists of ...
             executeReactor( is,
@@ -2209,7 +2208,26 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
         return authorizationStrategy;
     }
 
-    public Datastore getDatastore() { return datastore; }
+    public Datastore getDatastore() {
+        // Defaults to localhost:27017/test
+        if(datastore == null) {
+            synchronized (this) {
+                if(datastore == null) {
+                    Morphia morphia = new Morphia();
+                    Mapper mapper = morphia.getMapper();
+                    mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
+                    try{
+                        Mongo mongo = new Mongo(dbHost, dbPort);
+                        datastore = morphia.createDatastore(mongo, dbName);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }
+        }
+
+        return datastore;
+    }
     
     /**
      * The strategy used to check the project names.

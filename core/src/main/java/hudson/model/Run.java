@@ -1846,6 +1846,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      */
     public synchronized void save() throws IOException {
         if(BulkChange.contains(this))   return;
+        getDataFile().write(this);
         Jenkins.getInstance().getDatastore().save(this);
         SaveableListener.fireOnChange(this, getDataFile());
     }
