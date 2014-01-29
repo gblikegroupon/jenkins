@@ -59,6 +59,7 @@ import antlr.ANTLRException;
 import javax.annotation.CheckForNull;
 import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import hudson.model.Items;
+import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Triggers a {@link Build}.
@@ -144,7 +145,9 @@ public abstract class Trigger<J extends Item> implements Describable<Trigger<?>>
 
 
     protected final String spec;
+    @Transient
     protected transient CronTabList tabs;
+    @Transient
     protected transient J job;
 
     /**

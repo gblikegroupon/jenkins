@@ -263,6 +263,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
      * come and go as configuration change, so it's kept separate.
      */
     @CopyOnWrite
+    @Transient
     protected transient volatile List<Action> transientActions = new Vector<Action>();
 
     private boolean concurrentBuild;

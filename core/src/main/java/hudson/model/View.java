@@ -105,6 +105,7 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static jenkins.model.Jenkins.*;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.mongodb.morphia.annotations.Transient;
 
 /**
  * Encapsulates the rendering of the list of {@link TopLevelItem}s
@@ -133,6 +134,7 @@ public abstract class View extends AbstractModelObject implements AccessControll
      * Container of this view. Set right after the construction
      * and never change thereafter.
      */
+
     protected /*final*/ ViewGroup owner;
 
     /**
@@ -154,7 +156,8 @@ public abstract class View extends AbstractModelObject implements AccessControll
      * If true, only show relevant queue items
      */
     protected boolean filterQueue;
-    
+
+    @Transient
     protected transient List<Action> transientActions;
 
     /**

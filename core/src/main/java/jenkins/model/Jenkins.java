@@ -28,7 +28,7 @@ package jenkins.model;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
-import com.mongodb.Mongo;
+import com.mongodb.*;
 import hudson.ExtensionComponent;
 import hudson.ExtensionFinder;
 import hudson.init.*;
@@ -2209,24 +2209,23 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
     }
 
     public Datastore getDatastore() {
-        // Defaults to localhost:27017/test
-        if(datastore == null) {
-            synchronized (this) {
-                if(datastore == null) {
-                    Morphia morphia = new Morphia();
-                    Mapper mapper = morphia.getMapper();
-                    mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
-                    try{
-                        Mongo mongo = new Mongo(dbHost, dbPort);
-                        datastore = morphia.createDatastore(mongo, dbName);
-                    } catch (Exception ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            }
+        Morphia morphia = new Morphia();
+        Mapper mapper = morphia.getMapper();
+        mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
+        try{
+            MongoClientOptions.Builder optionsBuilder = new MongoClientOptions.Builder();
+            optionsBuilder.connectionsPerHost(5);
+            MongoClientOptions options = optionsBuilder.build();
+            MongoURI uri = new MongoURI("mongodb://localhost:27017/test");
+            //Mongo mongo = new Mongo(uri);
+            Mongo mongo = new Mongo.Holder().connect(uri);
+
+            return morphia.createDatastore(mongo, dbName);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
         }
 
-        return datastore;
+
     }
     
     /**

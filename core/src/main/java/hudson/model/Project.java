@@ -40,6 +40,7 @@ import hudson.util.DescribableList;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
+import org.mongodb.morphia.annotations.Transient;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -60,6 +61,7 @@ public abstract class Project<P extends Project<P,B>,B extends Build<P,B>>
     /**
      * List of active {@link Builder}s configured for this project.
      */
+    @Transient //TODO remove transient this is for testing only
     private volatile DescribableList<Builder,Descriptor<Builder>> builders;
     private static final AtomicReferenceFieldUpdater<Project,DescribableList> buildersSetter
             = AtomicReferenceFieldUpdater.newUpdater(Project.class,DescribableList.class,"builders");
@@ -67,6 +69,7 @@ public abstract class Project<P extends Project<P,B>,B extends Build<P,B>>
     /**
      * List of active {@link Publisher}s configured for this project.
      */
+    @Transient //TODO remove transient this is for testing only
     private volatile DescribableList<Publisher,Descriptor<Publisher>> publishers;
     private static final AtomicReferenceFieldUpdater<Project,DescribableList> publishersSetter
             = AtomicReferenceFieldUpdater.newUpdater(Project.class,DescribableList.class,"publishers");
@@ -74,6 +77,7 @@ public abstract class Project<P extends Project<P,B>,B extends Build<P,B>>
     /**
      * List of active {@link BuildWrapper}s configured for this project.
      */
+    @Transient //TODO remove transient this is for testing only
     private volatile DescribableList<BuildWrapper,Descriptor<BuildWrapper>> buildWrappers;
     private static final AtomicReferenceFieldUpdater<Project,DescribableList> buildWrappersSetter
             = AtomicReferenceFieldUpdater.newUpdater(Project.class,DescribableList.class,"buildWrappers");

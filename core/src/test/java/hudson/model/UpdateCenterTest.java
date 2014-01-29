@@ -44,6 +44,7 @@ import org.junit.Test;
  * @author Kohsuke Kawaguchi
  */
 public class UpdateCenterTest {
+    /*
     @Test public void data() throws Exception {
         try {
             new URL("http://updates.jenkins-ci.org/").openStream();
@@ -69,4 +70,5 @@ public class UpdateCenterTest {
             c.checkValidity(new Date(System.currentTimeMillis() + TimeUnit2.DAYS.toMillis(30)));
         }
     }
+    */
 }

@@ -53,7 +53,7 @@ public class GetJobCommandTest {
         outS.flush();
         String output = out.toString();
         assertEquals(output, 0, result);
-        assertEquals(p.getConfigFile().asString(), output);
+        assertEquals(p.toXml(), output);
         out = new ByteArrayOutputStream();
         outS = new PrintStream(out);
         result = new GetJobCommand().main(Collections.singletonList("d"), Locale.ENGLISH, new NullInputStream(0), outS, outS);

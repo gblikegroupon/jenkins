@@ -42,16 +42,19 @@ import hudson.util.AlternativeUiTextProvider;
 import hudson.util.AlternativeUiTextProvider.Message;
 import hudson.util.AtomicFileWriter;
 import hudson.util.IOUtils;
+import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import jenkins.model.Jenkins.MasterComputer;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.types.FileSet;
+import org.bson.types.ObjectId;
 import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Collection;
 import javax.annotation.Nonnull;
 
@@ -62,6 +65,7 @@ import org.kohsuke.stapler.HttpDeletable;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Transient;
 
 import javax.servlet.ServletException;
@@ -88,6 +92,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      */
     protected /*final*/ transient String name;
 
+    protected ObjectId id;
     /**
      * Project description. Can be HTML.
      */
@@ -463,11 +468,21 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
     public synchronized void save() throws IOException {
         if(BulkChange.contains(this))   return;
         getConfigFile().write(this);
+        //Jenkins.getInstance().getDatastore().save(this);
         SaveableListener.fireOnChange(this, getConfigFile());
     }
 
-    public final XmlFile getConfigFile() {
+    public XmlFile getConfigFile() {
         return Items.getConfigFile(this);
+    }
+
+    public String toXml() {
+        XStream2 xs = new XStream2();
+        StringWriter writer = new StringWriter();
+        writer.write("<?xml version='1.0' encoding='UTF-8'?>\n");
+        xs.toXML(this, writer);
+        StringBuffer buffer = writer.getBuffer();
+        return buffer.toString();
     }
 
     public Descriptor getDescriptorByName(String className) {

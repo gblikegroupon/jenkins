@@ -23,6 +23,8 @@
  */
 package hudson.util;
 
+import org.mongodb.morphia.annotations.Transient;
+
 /**
  * Concurrency primitive.
  *
@@ -39,6 +41,7 @@ package hudson.util;
  */
 public final class OneShotEvent {
     private boolean signaled;
+    @Transient
     private final Object lock;
 
     public OneShotEvent() {

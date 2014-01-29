@@ -166,6 +166,28 @@ public class AbstractProjectTest extends HudsonTestCase {
      * Unless the concurrent build option is enabled, polling and build should be mutually exclusive
      * to avoid allocating unnecessary workspaces.
      */
+
+    static class TestingNullSCM extends NullSCM {
+        @Override
+        public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener) {
+            try {
+                sync.block();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+
+        /**
+         * Don't write 'this', so that subtypes can be implemented as anonymous class.
+         */
+        private Object writeReplace() { return new Object(); }
+
+        @Override public boolean requiresWorkspaceForPolling() {
+            return true;
+        }
+    }
+
     @Bug(4202)
     public void testPollingAndBuildExclusion() {
         final OneShotEvent sync = new OneShotEvent();
@@ -173,26 +195,7 @@ public class AbstractProjectTest extends HudsonTestCase {
         final FreeStyleProject p = createFreeStyleProject();
         def b1 = buildAndAssertSuccess(p);
 
-        p.scm = new NullSCM() {
-            @Override
-            public boolean pollChanges(AbstractProject project, Launcher launcher, FilePath workspace, TaskListener listener) {
-                try {
-                    sync.block();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            }
-
-            /**
-             * Don't write 'this', so that subtypes can be implemented as anonymous class.
-             */
-            private Object writeReplace() { return new Object(); }
-
-            @Override public boolean requiresWorkspaceForPolling() {
-                return true;
-            }
-        };
+        p.scm = new TestingNullSCM();
         Thread t = new Thread() {
             @Override public void run() {
                 p.pollSCMChanges(StreamTaskListener.fromStdout());
