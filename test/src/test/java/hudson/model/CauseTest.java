@@ -24,6 +24,7 @@
 
 package hudson.model;
 
+import hudson.MongoXmlFile;
 import hudson.XmlFile;
 import java.io.File;
 import java.util.concurrent.Future;
@@ -50,9 +51,9 @@ public class CauseTest {
                 early = last;
             }
         }
-        String buildXml = new XmlFile(Run.XSTREAM, new File(early.getRootDir(), "build.xml")).asString();
+        String buildXml = new MongoXmlFile(Run.XSTREAM, new File(early.getRootDir(), "build.xml")).asString();
         assertTrue("keeps full history:\n" + buildXml, buildXml.contains("<upstreamBuild>1</upstreamBuild>"));
-        buildXml = new XmlFile(Run.XSTREAM, new File(last.getRootDir(), "build.xml")).asString();
+        buildXml = new MongoXmlFile(Run.XSTREAM, new File(last.getRootDir(), "build.xml")).asString();
         assertFalse("too big:\n" + buildXml, buildXml.contains("<upstreamBuild>1</upstreamBuild>"));
     }
 
@@ -74,7 +75,7 @@ public class CauseTest {
             c.scheduleBuild2(0, cause);
             last = next3.get();
         }
-        int count = new XmlFile(Run.XSTREAM, new File(last.getRootDir(), "build.xml")).asString().split(Pattern.quote("<hudson.model.Cause_-UpstreamCause")).length;
+        int count = new MongoXmlFile(Run.XSTREAM, new File(last.getRootDir(), "build.xml")).asString().split(Pattern.quote("<hudson.model.Cause_-UpstreamCause")).length;
         assertFalse("too big at " + count, count > 100);
         //j.interactiveBreak();
     }

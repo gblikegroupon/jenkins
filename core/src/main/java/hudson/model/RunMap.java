@@ -23,6 +23,7 @@
  */
 package hudson.model;
 
+import hudson.MongoXmlFile;
 import jenkins.model.lazy.AbstractLazyLoadRunMap;
 import jenkins.model.lazy.BuildReference;
 import org.apache.commons.collections.comparators.ReverseComparator;
@@ -216,7 +217,7 @@ public final class RunMap<R extends Run<?,R>> extends AbstractLazyLoadRunMap<R> 
 
     @Override
     protected R retrieve(File d) throws IOException {
-        if(new File(d,"build.xml").exists()) {
+        if(new MongoXmlFile(new File(d,"build.xml")).exists()) {
             // if the build result file isn't in the directory, ignore it.
             try {
                 R b = cons.create(d);

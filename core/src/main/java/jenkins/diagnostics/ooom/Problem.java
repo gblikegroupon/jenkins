@@ -1,6 +1,7 @@
 package jenkins.diagnostics.ooom;
 
 import hudson.AbortException;
+import hudson.MongoXmlFile;
 import hudson.Util;
 import hudson.model.AbstractProject;
 import hudson.model.Job;
@@ -289,7 +290,7 @@ public final class Problem {
 
         private String loadBuildNumberFromBuildXml(File dir) throws XPathExpressionException, IOException {
             File buildXml = new File(dir, "build.xml");
-            if (!buildXml.exists())
+            if (! new MongoXmlFile(buildXml).exists())
                 throw new AbortException(buildXml+" doesn't exist");
             String systemId = buildXml.toURI().toURL().toExternalForm();
             return (String)xpath.evaluate(new InputSource(systemId), XPathConstants.STRING);

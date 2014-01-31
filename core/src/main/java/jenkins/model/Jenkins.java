@@ -28,6 +28,7 @@ package jenkins.model;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Injector;
+import com.mongodb.Mongo;
 import hudson.ExtensionComponent;
 import hudson.ExtensionFinder;
 import hudson.init.*;
@@ -192,6 +193,7 @@ import jenkins.ExtensionComponentSet;
 import jenkins.ExtensionRefreshException;
 import jenkins.InitReactorRunner;
 import jenkins.model.ProjectNamingStrategy.DefaultProjectNamingStrategy;
+import jenkins.model.morphia.CustomMorphiaObjectFactory;
 import jenkins.security.ConfidentialKey;
 import jenkins.security.ConfidentialStore;
 import jenkins.slaves.WorkspaceLocator;
@@ -238,6 +240,12 @@ import org.kohsuke.stapler.framework.adjunct.AdjunctManager;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.jelly.JellyClassLoaderTearOff;
 import org.kohsuke.stapler.jelly.JellyRequestDispatcher;
+import org.mongodb.morphia.Datastore;
+import org.mongodb.morphia.EntityInterceptor;
+import org.mongodb.morphia.Morphia;
+import org.mongodb.morphia.mapping.MappedClass;
+import org.mongodb.morphia.mapping.MappedField;
+import org.mongodb.morphia.mapping.Mapper;
 import org.xml.sax.InputSource;
 
 import javax.crypto.SecretKey;
@@ -258,6 +266,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.net.BindException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -377,6 +387,11 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
      */
     private volatile SecurityRealm securityRealm = SecurityRealm.NO_AUTHENTICATION;
 
+    public String dbHost = "localhost";
+    public int dbPort = 27017;
+    public String dbName = "test";
+    private transient Datastore datastore;
+
     /**
      * Disables the remember me on this computer option in the standard login screen.
      *
@@ -483,6 +498,7 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
 
         public CloudList() {// needed for XStream deserialization
         }
+
 
         public Cloud getByName(String name) {
             for (Cloud c : this)
@@ -2196,6 +2212,30 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
         return authorizationStrategy;
     }
     
+    public Datastore getDatastore() {
+      // Defaults to localhost:27017/test
+      if(datastore == null) {
+        synchronized (this) {
+          if(datastore == null) {
+            Morphia morphia = new Morphia();
+            Mapper mapper = morphia.getMapper();
+
+            mapper.getOptions().actLikeSerializer = true;
+            mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
+
+                try{
+                  Mongo mongo = new Mongo(dbHost, dbPort);
+                  datastore = morphia.createDatastore(mongo, dbName);
+                } catch (Exception ex) {
+                  throw new RuntimeException(ex);
+                }
+          }
+        }
+      }
+
+      return datastore;
+    }
+
     /**
      * The strategy used to check the project names.
      * @return never <code>null</code>

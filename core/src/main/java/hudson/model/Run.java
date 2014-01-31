@@ -27,15 +27,9 @@
  */
 package hudson.model;
 
+import com.mongodb.DBObject;
+import hudson.*;
 import hudson.console.ConsoleLogFilter;
-import hudson.Functions;
-import hudson.AbortException;
-import hudson.BulkChange;
-import hudson.EnvVars;
-import hudson.ExtensionPoint;
-import hudson.FeedAdapter;
-import hudson.Util;
-import hudson.XmlFile;
 import hudson.cli.declarative.CLIMethod;
 import hudson.console.AnnotatedLargeText;
 import hudson.console.ConsoleNote;
@@ -100,6 +94,7 @@ import jenkins.util.io.OnMaster;
 import net.sf.json.JSONObject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.jelly.XMLOutput;
+import org.bson.types.ObjectId;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.*;
@@ -125,6 +120,7 @@ import jenkins.model.PeepholePermalink;
 import jenkins.model.StandardArtifactManager;
 import jenkins.model.RunAction2;
 import jenkins.util.VirtualFile;
+import org.mongodb.morphia.annotations.*;
 
 /**
  * A particular execution of {@link Job}.
@@ -138,10 +134,51 @@ import jenkins.util.VirtualFile;
  * @see RunListener
  */
 @ExportedBean
+@Entity("run")
 public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,RunT>>
         extends Actionable implements ExtensionPoint, Comparable<RunT>, AccessControlled, PersistenceRoot, DescriptorByNameOwner, OnMaster {
 
-    protected transient final JobT project;
+    // TODO return final keyword after this has been
+    // turned into a reference through Morphia
+    protected transient /*final*/ JobT project;
+
+    @PreLoad protected void preload(DBObject object) {
+      ObjectId jobId = (ObjectId) object.removeField("jobObjectId");
+
+      List<Job> jobs = Jenkins.getInstance().getItems(Job.class);
+      Job runJob = null;
+      for(Job job : jobs) {
+        if( jobId.equals(job.getId()) ) {
+          project = (JobT) job;
+          break;
+        }
+      }
+
+    }
+    public static String PathId(File file) {
+      String fullPath = file.getPath();
+      return fullPath.substring(fullPath.lastIndexOf("/jobs"));
+    }
+
+    private String id;
+
+    @PrePersist protected DBObject prepersist(DBObject object) {
+      object.put("jobObjectId", project.getId());
+      //TODO use ObjectID rather than filepaths when this is associated with its pare
+      String fullPath = getDataFile().getFile().getPath();
+      object.put("_id", Run.PathId(getDataFile().getFile()));
+      return object;
+    }
+
+    public String toXml() {
+        XStream2 xs = new XStream2();
+        StringWriter writer = new StringWriter();
+        writer.write("<?xml version='1.0' encoding='UTF-8'?>\n");
+        xs.toXML(this, writer);
+        StringBuffer buffer = writer.getBuffer();
+        return buffer.toString();
+    }
+
 
     /**
      * Build number.
@@ -1841,7 +1878,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     }
 
     private XmlFile getDataFile() {
-        return new XmlFile(XSTREAM,new File(getRootDir(),"build.xml"));
+        return new MongoXmlFile(XSTREAM,new File(getRootDir(),"build.xml"));
     }
 
     /**

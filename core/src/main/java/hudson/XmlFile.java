@@ -109,9 +109,9 @@ import java.util.logging.Logger;
  * @see <a href="https://wiki.jenkins-ci.org/display/JENKINS/Architecture#Architecture-Persistence">Architecture » Persistence</a>
  * @author Kohsuke Kawaguchi
  */
-public final class XmlFile {
-    private final XStream xs;
-    private final File file;
+public class XmlFile {
+    protected final XStream xs;
+    protected final File file;
 
     public XmlFile(File file) {
         this(DEFAULT_XSTREAM,file);
