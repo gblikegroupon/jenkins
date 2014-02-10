@@ -45,9 +45,13 @@ import javax.annotation.CheckForNull;
 
 import static jenkins.model.lazy.AbstractLazyLoadRunMap.Direction.*;
 import static jenkins.model.lazy.Boundary.*;
+
+import jenkins.model.Jenkins;
 import org.apache.commons.collections.keyvalue.DefaultMapEntry;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
+import org.mongodb.morphia.Datastore;
+import org.mongodb.morphia.query.Query;
 
 /**
  * {@link SortedMap} that keeps build records by their build numbers, in the descending order
@@ -366,159 +370,28 @@ public abstract class AbstractLazyLoadRunMap<R> extends AbstractMap<Integer,R> i
      *      If DESC, finds the closest #M that satisfies M&lt;=N.
      */
     public @CheckForNull R search(final int n, final Direction d) {
-        Entry<Integer, BuildReference<R>> c = index.ceilingEntry(n);
-        if (c!=null && c.getKey()== n) {
-            R r = c.getValue().get();
-            if (r!=null)
-            return r;    // found the exact #n
-        }
+        Datastore ds = Jenkins.getInstance().getDatastore();
 
-        // at this point we know that we don't have #n loaded yet
+        int index = dir.getPath().lastIndexOf("/jobs");
+        String projectKey = dir.getPath().substring(index);
+        Query query = ds.createQuery(Run.class);
 
-        {// check numberOnDisk as a cache to see if we can find it there
-            int npos = numberOnDisk.find(n);
-            if (npos>=0) {// found exact match
-                R r = load(numberOnDisk.get(npos), null);
-                if (r!=null)
-                    return r;
-            }
+        // limit to runs in for this job
+        query.limit(1).field("_id").startsWith(projectKey);
 
-            switch (d) {
+        switch (d) {
             case ASC:
+                query.order("-number").field("number").greaterThanOrEq(n);
+                break;
             case DESC:
-                // didn't find the exact match, but what's the nearest ascending value in the cache?
-                int neighbor = (d==ASC?HIGHER:LOWER).apply(npos);
-                if (numberOnDisk.isInRange(neighbor)) {
-                    R r = getByNumber(numberOnDisk.get(neighbor));
-                    if (r!=null) {
-                        // make sure that the cache is accurate by looking at the previous ID
-                        // and it actually satisfies the constraint
-                        int prev = (d==ASC?LOWER:HIGHER).apply(idOnDisk.find(getIdOf(r)));
-                        if (idOnDisk.isInRange(prev)) {
-                            R pr = getById(idOnDisk.get(prev));
-                            // sign*sign is making sure that #pr and #r sandwiches #n.
-                            if (pr!=null && signOfCompare(getNumberOf(pr),n)*signOfCompare(n,getNumberOf(r))>0)
-                                return r;
-                            else {
-                                // cache is lying. there's something fishy.
-                                // ignore the cache and do the slow search
-                            }
-                        } else {
-                            // r is the build with youngest ID
-                            return r;
-                        }
-                    } else {
-                        // cache says we should have a build but we didn't.
-                        // ignore the cache and do the slow search
-                    }
-                }
+                query.order("number").field("number").lessThanOrEq(n);
                 break;
             case EXACT:
-                // fall through
-            }
-
-            // didn't find it in the cache, but don't give up yet
-            // maybe the cache just doesn't exist.
-            // so fall back to the slow search
+                query.field("number").equal(n);
+                break;
         }
 
-        // capture the snapshot and work off with it since it can be overwritten by other threads
-        SortedList<String> idOnDisk = this.idOnDisk;
-        boolean clonedIdOnDisk = false; // if we modify idOnDisk we need to write it back. this flag is set to true when we overwrit idOnDisk local var
-
-        // slow path: we have to find the build from idOnDisk by guessing ID of the build.
-        // first, narrow down the candidate IDs to try by using two known number-to-ID mapping
-        if (idOnDisk.isEmpty())     return null;
-
-        Entry<Integer, BuildReference<R>> f = index.floorEntry(n);
-
-        // if bound is null, use a sentinel value
-        String cid = c==null ? "\u0000"  : c.getValue().id;
-        String fid = f==null ? "\uFFFF" : f.getValue().id;
-        // at this point, #n must be in (cid,fid)
-
-        // We know that the build we are looking for exists in [lo,hi)  --- it's "hi)" and not "hi]" because we do +1.
-        // we will narrow this down via binary search
-        final int initialSize = idOnDisk.size();
-        int lo = idOnDisk.higher(cid);
-        int hi = idOnDisk.lower(fid)+1;
-
-        final int initialLo = lo, initialHi = hi;
-
-        if (!(0<=lo && lo<=hi && hi<=idOnDisk.size())) {
-            // assertion error, but we are so far unable to get to the bottom of this bug.
-            // but don't let this kill the loading the hard way
-            String msg = String.format(
-                    "JENKINS-15652 Assertion error #1: failing to load %s #%d %s: lo=%d,hi=%d,size=%d,size2=%d",
-                    dir, n, d, lo, hi, idOnDisk.size(), initialSize);
-            LOGGER.log(Level.WARNING, msg);
-            return null;
-        }
-
-        while (lo<hi) {
-            final int pivot = (lo+hi)/2;
-            if (!(0<=lo && lo<=pivot && pivot<hi && hi<=idOnDisk.size())) {
-                // assertion error, but we are so far unable to get to the bottom of this bug.
-                // but don't let this kill the loading the hard way
-                String msg = String.format(
-                        "JENKINS-15652 Assertion error #2: failing to load %s #%d %s: lo=%d,hi=%d,pivot=%d,size=%d (initial:lo=%d,hi=%d,size=%d)",
-                        dir, n, d, lo, hi, pivot, idOnDisk.size(), initialLo, initialHi, initialSize);
-                LOGGER.log(Level.WARNING, msg);
-                return null;
-            }
-            R r = load(idOnDisk.get(pivot), null);
-            if (r==null) {
-                // this ID isn't valid. get rid of that and retry pivot
-                hi--;
-                if (!clonedIdOnDisk) {// if we are making an edit, we need to own a copy
-                    idOnDisk = new SortedList<String>(idOnDisk);
-                    clonedIdOnDisk = true;
-                }
-                idOnDisk.remove(pivot);
-                continue;
-            }
-
-            int found = getNumberOf(r);
-            if (found==n)
-                return r;   // exact match
-
-            if (found<n)    lo = pivot+1;   // the pivot was too small. look in the upper half
-            else            hi = pivot;     // the pivot was too big. look in the lower half
-        }
-
-        if (clonedIdOnDisk)
-            this.idOnDisk = idOnDisk;   // feedback the modified result atomically
-
-        assert lo==hi;
-        // didn't find the exact match
-        // both lo and hi point to the insertion point on idOnDisk
-        switch (d) {
-        case ASC:
-            if (hi==idOnDisk.size())    return null;
-            return getById(idOnDisk.get(hi));
-        case DESC:
-            if (lo<=0)                 return null;
-            if (lo-1>=idOnDisk.size()) {
-                // assertion error, but we are so far unable to get to the bottom of this bug.
-                // but don't let this kill the loading the hard way
-                LOGGER.log(Level.WARNING, String.format(
-                        "JENKINS-15652 Assertion error #3: failing to load %s #%d %s: lo=%d,hi=%d,size=%d (initial:lo=%d,hi=%d,size=%d)",
-                        dir, n,d,lo,hi,idOnDisk.size(), initialLo,initialHi,initialSize));
-                return null;
-            }
-            return getById(idOnDisk.get(lo-1));
-        case EXACT:
-            if (hi<=0)                 return null;
-            R r = load(idOnDisk.get(hi-1), null);
-            if (r==null)               return null;
-
-            int found = getNumberOf(r);
-            if (found==n)
-                return r;   // exact match
-            return null;
-        default:
-            throw new AssertionError();
-        }
+        return (R) query.get();
     }
 
     /**

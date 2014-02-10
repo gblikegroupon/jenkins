@@ -249,7 +249,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     /**
      * The current build state.
      */
-    protected volatile transient State state;
+    protected volatile State state;
 
     private static enum State {
         /**
@@ -360,6 +360,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
         this.state = State.COMPLETED;
         this.result = Result.FAILURE;  // defensive measure. value should be overwritten by unmarshal, but just in case the saved data is inconsistent
         getDataFile().reload(this); // load the rest of the data
+
 
         // not calling onLoad upon reload. partly because we don't want to call that from Run constructor,
         // and partly because some existing use of onLoad isn't assuming that it can be invoked multiple times.
@@ -1866,6 +1867,11 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
             LOGGER.warning(toString() + ": No build result is set, so marking as failure. This shouldn't happen.");
         }
 
+        try {
+            save();
+        } catch(IOException ex) {
+            LOGGER.log(SEVERE, "Unable to save completing build",ex);
+        }
         RunListener.fireFinalized(this);
     }
 

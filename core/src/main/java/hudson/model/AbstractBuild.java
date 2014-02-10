@@ -849,25 +849,6 @@ public abstract class AbstractBuild<P extends AbstractProject<P,R>,R extends Abs
      */
     @Exported
     public ChangeLogSet<? extends Entry> getChangeSet() {
-        synchronized (changeSetLock) {
-            if (scm==null) {
-                // for historical reason, null means CVS.
-                try {
-                    Class<?> c = Jenkins.getInstance().getPluginManager().uberClassLoader.loadClass("hudson.scm.CVSChangeLogParser");
-                    scm = (ChangeLogParser)c.newInstance();
-                } catch (ClassNotFoundException e) {
-                    // if CVS isn't available, fall back to something non-null.
-                    scm = NullChangeLogParser.INSTANCE;
-                } catch (InstantiationException e) {
-                    scm = NullChangeLogParser.INSTANCE;
-                    throw (Error)new InstantiationError().initCause(e);
-                } catch (IllegalAccessException e) {
-                    scm = NullChangeLogParser.INSTANCE;
-                    throw (Error)new IllegalAccessError().initCause(e);
-                }
-            }
-        }
-
         ChangeLogSet<? extends Entry> cs = null;
         if (changeSet!=null)
             cs = changeSet.get();
