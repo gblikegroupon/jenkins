@@ -219,6 +219,10 @@ public class XmlFile {
         return w.toString();
     }
 
+    public void reload(Object o) throws IOException{
+        unmarshal(o);
+    }
+
     /**
      * Writes the raw XML to the given {@link Writer}.
      * Writer will not be closed by the implementation.
@@ -301,13 +305,13 @@ public class XmlFile {
     /**
      * {@link XStream} instance is supposed to be thread-safe.
      */
-    private static final XStream DEFAULT_XSTREAM = new XStream2();
+    protected static final XStream DEFAULT_XSTREAM = new XStream2();
 
     private static final Logger LOGGER = Logger.getLogger(XmlFile.class.getName());
 
     private static final SAXParserFactory JAXP = SAXParserFactory.newInstance();
 
-    private static final XppDriver DEFAULT_DRIVER = new XppDriver();
+    protected static final XppDriver DEFAULT_DRIVER = new XppDriver();
 
     static {
         JAXP.setNamespaceAware(true);

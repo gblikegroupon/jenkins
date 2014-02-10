@@ -1,10 +1,13 @@
 package hudson;
 
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.XStreamException;
 import hudson.model.Run;
 import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import org.mongodb.morphia.Datastore;
+import org.objenesis.ObjenesisStd;
+import org.objenesis.instantiator.ObjectInstantiator;
 
 import java.io.*;
 
@@ -21,7 +24,7 @@ public class MongoXmlFile extends XmlFile {
     }
 
     private String makeId() {
-        int index = file.getPath().lastIndexOf("jobs");
+        int index = file.getPath().lastIndexOf("/jobs");
         return file.getPath().substring(index);
     }
 
@@ -34,6 +37,23 @@ public class MongoXmlFile extends XmlFile {
             throw new IOException("Unable to retrieve run: " + makeId(), ex);
         }
 
+    }
+
+    @Override public void reload(Object o) throws IOException {
+        // extra convoluted, but makes use of XStream's ability to inject attributes
+        // into an existing object
+        // TODO replace with Guice
+        Reader reader = readRaw();
+        try {
+            // TODO: expose XStream the driver from XStream
+            xs.unmarshal(DEFAULT_DRIVER.createReader(reader), o);
+        } catch (XStreamException e) {
+            throw new IOException("Unable to read "+file,e);
+        } catch(Error e) {// mostly reflection errors
+            throw new IOException("Unable to read "+file,e);
+        } finally {
+            reader.close();
+        }
     }
 
     @Override
