@@ -29,16 +29,7 @@ import hudson.model.RunMap;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.CheckForNull;
@@ -353,6 +344,18 @@ public abstract class AbstractLazyLoadRunMap<R> extends AbstractMap<Integer,R> i
 
     public R get(int n) {
         return search(n,Direction.EXACT);
+    }
+
+    public Collection<R> values() {
+        Datastore ds = Jenkins.getInstance().getDatastore();
+
+        int index = dir.getPath().lastIndexOf("/jobs");
+        String projectKey = dir.getPath().substring(index);
+        Query query = ds.createQuery(Run.class);
+        query.field("_id").startsWith(projectKey);
+        query.order("-number");
+
+        return query.asList();
     }
 
     /**

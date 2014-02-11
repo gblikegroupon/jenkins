@@ -34,12 +34,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.SortedMap;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,29 +90,7 @@ public final class RunMap<R extends Run<?,R>> extends AbstractLazyLoadRunMap<R> 
      * Walks through builds, newer ones first.
      */
     public Iterator<R> iterator() {
-        return new Iterator<R>() {
-            R last = null;
-            R next = newestBuild();
-
-            public boolean hasNext() {
-                return next!=null;
-            }
-
-            public R next() {
-                last = next;
-                if (last!=null)
-                    next = last.getPreviousBuild();
-                else
-                    throw new NoSuchElementException();
-                return last;
-            }
-
-            public void remove() {
-                if (last==null)
-                    throw new UnsupportedOperationException();
-                removeValue(last);
-            }
-        };
+        return values().iterator();
     }
 
     @Override
