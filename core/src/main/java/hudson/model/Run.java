@@ -217,7 +217,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     /**
      * When the build is scheduled.
      */
-    protected transient final long timestamp;
+    protected final Date timestamp;
 
     /**
      * When the build has started running.
@@ -337,7 +337,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
 
     protected Run(JobT job, long timestamp) {
         this.project = job;
-        this.timestamp = timestamp;
+        this.timestamp = new Date(timestamp);
         this.state = State.NOT_STARTED;
 		getRootDir().mkdirs();
     }
@@ -629,7 +629,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     @Exported
     public Calendar getTimestamp() {
         GregorianCalendar c = new GregorianCalendar();
-        c.setTimeInMillis(timestamp);
+        c.setTime(timestamp);
         return c;
     }
 
@@ -637,14 +637,14 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * Same as {@link #getTimestamp()} but in a different type.
      */
     public final Date getTime() {
-        return new Date(timestamp);
+        return timestamp;
     }
 
     /**
      * Same as {@link #getTimestamp()} but in a different type, that is since the time of the epoc.
      */
     public final long getTimeInMillis() {
-        return timestamp;
+        return timestamp.getTime();
     }
 
     /**
@@ -656,7 +656,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * @see #getTimestamp()
      */
     public final long getStartTimeInMillis() {
-        if (startTime==0)   return timestamp;   // fallback: approximate by the queuing time
+        if (startTime==0)   return timestamp.getTime();   // fallback: approximate by the queuing time
         return startTime;
     }
 
@@ -722,7 +722,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      *      string like "3 minutes" "1 day" etc.
      */
     public String getTimestampString() {
-        long duration = new GregorianCalendar().getTimeInMillis()-timestamp;
+        long duration = new GregorianCalendar().getTimeInMillis()-timestamp.getTime();
         return Util.getPastTimeString(duration);
     }
 
@@ -730,7 +730,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * Returns the timestamp formatted in xs:dateTime.
      */
     public String getTimestampString2() {
-        return Util.XS_DATETIME_FORMATTER.format(new Date(timestamp));
+        return Util.XS_DATETIME_FORMATTER.format(timestamp);
     }
 
     /**
@@ -739,7 +739,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     public String getDurationString() {
         if(isBuilding())
             return Messages.Run_InProgressDuration(
-                    Util.getTimeSpanString(System.currentTimeMillis()-timestamp));
+                    Util.getTimeSpanString(System.currentTimeMillis()-timestamp.getTime()));
         return Util.getTimeSpanString(duration);
     }
 
@@ -995,7 +995,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      */
     @Exported
     public String getId() {
-        return ID_FORMATTER.get().format(new Date(timestamp));
+        return ID_FORMATTER.get().format(timestamp);
     }
     
     /**
