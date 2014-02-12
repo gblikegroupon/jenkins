@@ -1,9 +1,14 @@
 package jenkins.model.morphia;
 
+import com.mongodb.DBObject;
+import hudson.PluginWrapper;
+import jenkins.model.Jenkins;
 import org.mongodb.morphia.mapping.MappingException;
 import org.objenesis.Objenesis;
 import org.objenesis.ObjenesisStd;
 import java.lang.reflect.Constructor;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.mongodb.morphia.mapping.DefaultCreator;
 
@@ -13,9 +18,11 @@ import org.mongodb.morphia.mapping.DefaultCreator;
  */
 
 public class CustomMorphiaObjectFactory extends DefaultCreator {
+    private ClassLoader uberclassLoader;
     Objenesis objenesis;
     public CustomMorphiaObjectFactory(){
         this.objenesis = new ObjenesisStd();
+        this.uberclassLoader = Jenkins.getInstance().getPluginManager().uberClassLoader;
     }
 
 
@@ -34,6 +41,11 @@ public class CustomMorphiaObjectFactory extends DefaultCreator {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected ClassLoader getClassLoaderForClass(final String clazz, final DBObject object) {
+        return uberclassLoader;
     }
 
     private Constructor getNoArgsConstructor(final Class ctorType) {

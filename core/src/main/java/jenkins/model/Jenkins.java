@@ -2211,11 +2211,13 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
     public AuthorizationStrategy getAuthorizationStrategy() {
         return authorizationStrategy;
     }
-    
+
+    public transient Object datastoreLock = new Object();
+
     public Datastore getDatastore() {
       // Defaults to localhost:27017/test
       if(datastore == null) {
-        synchronized (this) {
+        synchronized (datastoreLock) {
           if(datastore == null) {
             Morphia morphia = new Morphia();
             Mapper mapper = morphia.getMapper();
