@@ -25,7 +25,6 @@ public class CustomMorphiaObjectFactory extends DefaultCreator {
         this.uberclassLoader = Jenkins.getInstance().getPluginManager().uberClassLoader;
     }
 
-
     @Override
     public Object createInstance(Class clazz) {
         try {

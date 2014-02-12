@@ -54,6 +54,9 @@ import hudson.model.Saveable;
 import hudson.util.xstream.ImmutableListConverter;
 import hudson.util.xstream.ImmutableMapConverter;
 import hudson.util.xstream.MapperDelegate;
+import jenkins.util.xstream.ObjectIdConverter;
+import org.bson.types.ObjectId;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -139,6 +142,10 @@ public class XStream2 extends XStream {
         registerConverter(new CopyOnWriteMap.Tree.ConverterImpl(getMapper()),10); // needs to override MapConverter
         registerConverter(new DescribableList.ConverterImpl(getMapper()),10); // explicitly added to handle subtypes
         registerConverter(new Label.ConverterImpl(),10);
+
+        // Add ObjectId persistence while Jobs are still stored in xml on disk
+        registerConverter(new ObjectIdConverter(),10);
+        alias("objectid", ObjectId.class);
 
         // this should come after all the XStream's default simpler converters,
         // but before reflection-based one kicks in.
