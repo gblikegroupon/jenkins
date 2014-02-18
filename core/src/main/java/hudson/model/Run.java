@@ -140,8 +140,9 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
 
     // TODO return final keyword after this has been
     // turned into a reference through Morphia
-    protected transient /*final*/ JobT project;
-
+    @Reference(lazy=true)
+    protected /*final*/ JobT project;
+/*
     @PreLoad protected void preload(DBObject object) {
       ObjectId jobId = (ObjectId) object.removeField("jobObjectId");
 
@@ -155,6 +156,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
       }
 
     }
+    */
     public static String PathId(File file) {
       String fullPath = file.getPath();
       return fullPath.substring(fullPath.lastIndexOf("/jobs"));
@@ -164,7 +166,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     private String id;
 
     @PrePersist protected DBObject prepersist(DBObject object) {
-      object.put("jobObjectId", project.getId());
+      //object.put("jobObjectId", project.getId());
       //TODO use ObjectID rather than filepaths when this is associated with its pare
       String fullPath = getDataFile().getFile().getPath();
       object.put("_id", Run.PathId(getDataFile().getFile()));
@@ -250,6 +252,10 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * The current build state.
      */
     protected volatile State state;
+
+    public State getState() {
+        return state;
+    }
 
     private static enum State {
         /**

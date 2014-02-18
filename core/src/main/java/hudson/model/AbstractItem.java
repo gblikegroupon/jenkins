@@ -46,6 +46,7 @@ import jenkins.model.Jenkins;
 import jenkins.model.Jenkins.MasterComputer;
 import org.apache.tools.ant.taskdefs.Copy;
 import org.apache.tools.ant.types.FileSet;
+import org.bson.types.ObjectId;
 import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
@@ -62,6 +63,7 @@ import org.kohsuke.stapler.HttpDeletable;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.mongodb.morphia.annotations.Id;
 
 import javax.servlet.ServletException;
 import javax.xml.transform.Source;
@@ -87,6 +89,9 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      */
     protected /*final*/ transient String name;
 
+    @Id
+    private ObjectId id;
+
     /**
      * Project description. Can be HTML.
      */
@@ -98,6 +103,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
 
     protected AbstractItem(ItemGroup parent, String name) {
         this.parent = parent;
+        this.id = new ObjectId();
         doSetName(name);
     }
 
@@ -460,7 +466,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
         SaveableListener.fireOnChange(this, getConfigFile());
     }
 
-    public final XmlFile getConfigFile() {
+    public XmlFile getConfigFile() {
         return Items.getConfigFile(this);
     }
 

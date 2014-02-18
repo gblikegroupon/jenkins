@@ -27,11 +27,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.infradna.tool.bridge_method_injector.WithBridgeMethods;
 
-import hudson.EnvVars;
-import hudson.Extension;
-import hudson.ExtensionPoint;
-import hudson.PermalinkList;
-import hudson.Util;
+import hudson.*;
 import hudson.cli.declarative.CLIResolver;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Fingerprint.Range;
@@ -100,6 +96,7 @@ import java.io.*;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static javax.servlet.http.HttpServletResponse.*;
 
@@ -114,9 +111,11 @@ import static javax.servlet.http.HttpServletResponse.*;
  *
  * @author Kohsuke Kawaguchi
  */
+@Entity("job")
 public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, RunT>>
         extends AbstractItem implements ExtensionPoint, StaplerOverridable, OnMaster {
 
+    @Id
     private ObjectId id;
 
     /**
@@ -158,17 +157,22 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
      * List of {@link UserProperty}s configured for this project.
      */
     // this should have been DescribableList but now it's too late
-    protected CopyOnWriteList<JobProperty<? super JobT>> properties = new CopyOnWriteList<JobProperty<? super JobT>>();
+    protected List<JobProperty<? super JobT>> properties = new CopyOnWriteArrayList<JobProperty<? super JobT>>();
 
     protected Job(ItemGroup parent, String name) {
         super(parent, name);
-        this.id = new ObjectId();
+        //this.id = new ObjectId();
     }
 
     @Override
     public synchronized void save() throws IOException {
         super.save();
         holdOffBuildUntilSave = holdOffBuildUntilUserSave;
+    }
+
+    @Override
+    public XmlFile getConfigFile() {
+        return new MongoXmlFile(Items.XSTREAM, new File(getRootDir(),"config.xml"));
     }
 
     @Override
@@ -211,7 +215,7 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
         }
 
         if (properties == null) // didn't exist < 1.72
-            properties = new CopyOnWriteList<JobProperty<? super JobT>>();
+            properties = new CopyOnWriteArrayList<JobProperty<? super JobT>>();
 
         for (JobProperty p : properties)
             p.setOwner(this);
@@ -537,7 +541,7 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
      */
     @Exported(name="property",inline=true)
     public List<JobProperty<? super JobT>> getAllProperties() {
-        return properties.getView();
+        return Collections.unmodifiableList(properties);
     }
 
     /**
