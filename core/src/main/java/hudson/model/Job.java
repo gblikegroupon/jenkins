@@ -87,6 +87,7 @@ import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.PostLoad;
 import org.mongodb.morphia.annotations.Transient;
 
 import javax.servlet.ServletException;
@@ -114,9 +115,6 @@ import static javax.servlet.http.HttpServletResponse.*;
 @Entity("job")
 public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, RunT>>
         extends AbstractItem implements ExtensionPoint, StaplerOverridable, OnMaster {
-
-    @Id
-    private ObjectId id;
 
     /**
      * Next build number. Kept in a separate file because this is the only
@@ -161,7 +159,6 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
 
     protected Job(ItemGroup parent, String name) {
         super(parent, name);
-        //this.id = new ObjectId();
     }
 
     @Override
@@ -219,10 +216,6 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
 
         for (JobProperty p : properties)
             p.setOwner(this);
-    }
-
-    public ObjectId getId() {
-      return id;
     }
 
     @Override

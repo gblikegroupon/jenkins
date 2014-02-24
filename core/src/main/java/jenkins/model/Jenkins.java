@@ -246,6 +246,7 @@ import org.mongodb.morphia.Morphia;
 import org.mongodb.morphia.mapping.MappedClass;
 import org.mongodb.morphia.mapping.MappedField;
 import org.mongodb.morphia.mapping.Mapper;
+import org.mongodb.morphia.query.Query;
 import org.xml.sax.InputSource;
 
 import javax.crypto.SecretKey;

@@ -140,23 +140,9 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
 
     // TODO return final keyword after this has been
     // turned into a reference through Morphia
-    @Reference(lazy=true)
+    @Reference
     protected /*final*/ JobT project;
-/*
-    @PreLoad protected void preload(DBObject object) {
-      ObjectId jobId = (ObjectId) object.removeField("jobObjectId");
 
-      List<Job> jobs = Jenkins.getInstance().getItems(Job.class);
-      Job runJob = null;
-      for(Job job : jobs) {
-        if( jobId.equals(job.getId()) ) {
-          project = (JobT) job;
-          break;
-        }
-      }
-
-    }
-    */
     public static String PathId(File file) {
       String fullPath = file.getPath();
       return fullPath.substring(fullPath.lastIndexOf("/jobs"));
@@ -166,8 +152,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     private String id;
 
     @PrePersist protected DBObject prepersist(DBObject object) {
-      //object.put("jobObjectId", project.getId());
-      //TODO use ObjectID rather than filepaths when this is associated with its pare
+      //TODO use ObjectID rather than filepaths when this is associated with its parent
       String fullPath = getDataFile().getFile().getPath();
       object.put("_id", Run.PathId(getDataFile().getFile()));
       return object;

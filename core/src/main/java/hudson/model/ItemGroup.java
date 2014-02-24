@@ -24,6 +24,8 @@
 package hudson.model;
 
 import hudson.model.listeners.ItemListener;
+import org.mongodb.morphia.annotations.Entity;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.io.File;
@@ -35,6 +37,7 @@ import javax.annotation.CheckForNull;
  * @author Kohsuke Kawaguchi
  * @see ItemGroupMixIn
  */
+
 public interface ItemGroup<T extends Item> extends PersistenceRoot, ModelObject {
     /**
      * Gets the full name of this {@link ItemGroup}.

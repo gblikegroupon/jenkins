@@ -25,6 +25,7 @@
 package hudson.model;
 
 import com.infradna.tool.bridge_method_injector.WithBridgeMethods;
+import com.mongodb.DBObject;
 import hudson.AbortException;
 import hudson.XmlFile;
 import hudson.Util;
@@ -54,6 +55,8 @@ import org.kohsuke.stapler.export.ExportedBean;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
+import java.util.logging.Logger;
 import javax.annotation.Nonnull;
 
 import org.kohsuke.stapler.StaplerRequest;
@@ -63,7 +66,7 @@ import org.kohsuke.stapler.HttpDeletable;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.stapler.interceptor.RequirePOST;
-import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.*;
 
 import javax.servlet.ServletException;
 import javax.xml.transform.Source;
@@ -73,6 +76,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 
 /**
@@ -84,13 +89,49 @@ import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 // Java doesn't let multiple inheritance.
 @ExportedBean
 public abstract class AbstractItem extends Actionable implements Item, HttpDeletable, AccessControlled, DescriptorByNameOwner {
+    protected static final Logger LOGGER = Logger.getLogger(AbstractItem.class.getName());
     /**
      * Project name.
      */
-    protected /*final*/ transient String name;
+
+    protected /*final*/ String name;
 
     @Id
-    private ObjectId id;
+    private ObjectId id = new ObjectId();
+    public ObjectId getId() {
+        return id;
+    }
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
+
+    protected ObjectId parentId;
+
+    private static final ObjectId JENKINS_ID = new ObjectId("000000000000000000000000");
+    @PostLoad
+    protected void preload() {
+        if(JENKINS_ID.equals(parentId)) {
+            this.setParent(Jenkins.getInstance());
+        } else if(parentId == null) {
+            LOGGER.warning("Restoring Item["+this.getClass().getSimpleName()+"] without parent: " + this.getId());
+        } else {
+            this.setParent(findFromLoadedItems(parentId));
+        }
+    }
+
+    private ItemGroup findFromLoadedItems(ObjectId objectId) {
+        List<AbstractItem> items = Jenkins.getInstance().getItems(AbstractItem.class);
+        for(AbstractItem item : items) {
+            if( objectId.equals(item.getId()) ) {
+                if(item instanceof ItemGroup) {
+                    return (ItemGroup)item;
+                } else {
+                    throw new RuntimeException("Restoring Item["+item.getClass().getSimpleName()+"] is not a legal container class: " + item.getId());
+                }
+            }
+        }
+        throw new RuntimeException("Restoring Item["+this.getClass().getSimpleName()+"] does not have a loaded parent: " + this.getId());
+    }
 
     /**
      * Project description. Can be HTML.
@@ -98,12 +139,15 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
     protected volatile String description;
 
     private transient ItemGroup parent;
+
+    public void setParent(ItemGroup parent){
+        this.parent = parent;
+    }
     
     protected String displayName;
 
     protected AbstractItem(ItemGroup parent, String name) {
         this.parent = parent;
-        this.id = new ObjectId();
         doSetName(name);
     }
 
