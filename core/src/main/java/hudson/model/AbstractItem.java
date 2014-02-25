@@ -109,13 +109,23 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
 
     private static final ObjectId JENKINS_ID = new ObjectId("000000000000000000000000");
     @PostLoad
-    protected void preload() {
+    protected void postLoad() {
         if(JENKINS_ID.equals(parentId)) {
             this.setParent(Jenkins.getInstance());
         } else if(parentId == null) {
             LOGGER.warning("Restoring Item["+this.getClass().getSimpleName()+"] without parent: " + this.getId());
         } else {
             this.setParent(findFromLoadedItems(parentId));
+        }
+    }
+
+    @PrePersist private void setParentId() {
+        if(Jenkins.getInstance().equals(parent)) {
+            parentId = JENKINS_ID;
+        } else if(parent instanceof AbstractItem) {
+            parentId = ((AbstractItem) parent).getId();
+        } else {
+            throw new IllegalStateException("Attempting to save project without identifiable parent");
         }
     }
 

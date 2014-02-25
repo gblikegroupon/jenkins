@@ -106,6 +106,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
@@ -260,8 +261,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
      * We don't want to persist them separately, and these actions
      * come and go as configuration change, so it's kept separate.
      */
-    @CopyOnWrite
-    protected transient volatile List<Action> transientActions = new Vector<Action>();
+    protected transient volatile List<Action> transientActions = new CopyOnWriteArrayList<Action>();
 
     private boolean concurrentBuild;
 
@@ -300,9 +300,9 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
     public void onLoad(ItemGroup<? extends Item> parent, String name) throws IOException {
         super.onLoad(parent, name);
 
-        RunMap<R> builds = createBuildRunMap();
+        RunMap<R> builds = _getRuns();
 
-        RunMap<R> currentBuilds = this.builds;
+        RunMap<R> currentBuilds = this._getRuns();
 
         if (currentBuilds==null && parent!=null) {
             // are we overwriting what currently exist?
@@ -315,17 +315,16 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
                 current = null;
             }
             if (current!=null && current.getClass()==getClass()) {
-                currentBuilds = ((AbstractProject)current).builds;
+                currentBuilds = _getRuns();
             }
         }
         if (currentBuilds !=null) {
             // if we are reloading, keep all those that are still building intact
             for (R r : currentBuilds.getLoadedBuilds().values()) {
                 if (r.isBuilding())
-                    builds.put(r);
+                    _getRuns().put(r);
             }
         }
-        this.builds = builds;
         triggers().setOwner(this);
         for (Trigger t : triggers()) {
             t.start(this, Items.currentlyUpdatingByXml());
@@ -1042,13 +1041,13 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
         if (builds == null) {
             builds = createBuildRunMap();
         }
-        assert builds.baseDirInitialized() : "neither onCreatedFromScratch nor onLoad called on " + this + " yet";
+        assert _getRuns().baseDirInitialized() : "neither onCreatedFromScratch nor onLoad called on " + this + " yet";
         return builds;
     }
 
     @Override
     public void removeRun(R run) {
-        if (!this.builds.remove(run)) {
+        if (!this._getRuns().remove(run)) {
             LOGGER.log(Level.WARNING, "{0} did not contain {1} to begin with", new Object[] {this, run});
         }
     }
@@ -1060,7 +1059,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
      */
     @Override
     public R getBuild(String id) {
-        return builds.getById(id);
+        return _getRuns().getById(id);
     }
 
     /**
@@ -1070,7 +1069,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
      */
     @Override
     public R getBuildByNumber(int n) {
-        return builds.getByNumber(n);
+        return _getRuns().getByNumber(n);
     }
 
     /**
@@ -1080,22 +1079,22 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
      */
     @Override
     public R getFirstBuild() {
-        return builds.oldestBuild();
+        return _getRuns().oldestBuild();
     }
 
     @Override
     public @CheckForNull R getLastBuild() {
-        return builds.newestBuild();
+        return _getRuns().newestBuild();
     }
 
     @Override
     public R getNearestBuild(int n) {
-        return builds.search(n, Direction.ASC);
+        return _getRuns().search(n, Direction.ASC);
     }
 
     @Override
     public R getNearestOldBuild(int n) {
-        return builds.search(n, Direction.DESC);
+        return _getRuns().search(n, Direction.DESC);
     }
 
     /**
@@ -1122,7 +1121,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
     	lastBuildStartTime = System.currentTimeMillis();
         try {
             R lastBuild = getBuildClass().getConstructor(getClass()).newInstance(this);
-            builds.put(lastBuild);
+            _getRuns().put(lastBuild);
             return lastBuild;
         } catch (InstantiationException e) {
             throw new Error(e);
@@ -1158,26 +1157,6 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
         } catch (NoSuchMethodException e) {
             throw new Error(e);
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>
-     * Note that this method returns a read-only view of {@link Action}s.
-     * {@link BuildStep}s and others who want to add a project action
-     * should do so by implementing {@link BuildStep#getProjectActions(AbstractProject)}.
-     *
-     * @see TransientProjectActionFactory
-     */
-    @SuppressWarnings("deprecation")
-    @Override
-    public List<Action> getActions() {
-        // add all the transient actions, too
-        List<Action> actions = new Vector<Action>(super.getActions());
-        actions.addAll(transientActions);
-        // return the read only list to cause a failure on plugins who try to add an action here
-        return Collections.unmodifiableList(actions);
     }
 
     /**
@@ -2421,7 +2400,7 @@ public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends A
         @Override public void onLocationChanged(Item item, String oldFullName, String newFullName) {
             if (item instanceof AbstractProject) {
                 AbstractProject p = (AbstractProject) item;
-                p.builds.updateBaseDir(p.getBuildDir());
+                p._getRuns().updateBaseDir(p.getBuildDir());
             }
         }
     }
