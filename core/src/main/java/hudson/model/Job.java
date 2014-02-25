@@ -116,6 +116,16 @@ import static javax.servlet.http.HttpServletResponse.*;
 public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, RunT>>
         extends AbstractItem implements ExtensionPoint, StaplerOverridable, OnMaster {
 
+    @PostLoad private void setAllPropertyOwner() {
+        if(properties == null) {
+            properties = new CopyOnWriteArrayList<JobProperty<? super JobT>>();
+        } else {
+            for(JobProperty property : properties) {
+                property.setOwner(this);
+            }
+        }
+    }
+
     /**
      * Next build number. Kept in a separate file because this is the only
      * information that gets updated often. This allows the rest of the
