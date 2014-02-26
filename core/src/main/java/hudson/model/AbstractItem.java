@@ -107,7 +107,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
 
     protected ObjectId parentId;
 
-    private static final ObjectId JENKINS_ID = new ObjectId("000000000000000000000000");
+    public static final ObjectId JENKINS_ID = new ObjectId("000000000000000000000000");
     @PostLoad
     protected void postLoad() {
         if(JENKINS_ID.equals(parentId)) {

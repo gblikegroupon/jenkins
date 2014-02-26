@@ -32,62 +32,13 @@ import com.mongodb.Mongo;
 import hudson.ExtensionComponent;
 import hudson.ExtensionFinder;
 import hudson.init.*;
-import hudson.model.LoadStatistics;
-import hudson.model.Messages;
-import hudson.model.Node;
-import hudson.model.AbstractCIBase;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
-import hudson.model.AdministrativeMonitor;
-import hudson.model.AllView;
-import hudson.model.Api;
-import hudson.model.Computer;
-import hudson.model.ComputerSet;
-import hudson.model.DependencyGraph;
-import hudson.model.Describable;
-import hudson.model.Descriptor;
-import hudson.model.DescriptorByNameOwner;
-import hudson.model.DirectoryBrowserSupport;
-import hudson.model.Failure;
-import hudson.model.Fingerprint;
-import hudson.model.FingerprintCleanupThread;
-import hudson.model.FingerprintMap;
-import hudson.model.Hudson;
-import hudson.model.Item;
-import hudson.model.ItemGroup;
-import hudson.model.ItemGroupMixIn;
-import hudson.model.Items;
-import hudson.model.ModifiableViewGroup;
-import hudson.model.JDK;
-import hudson.model.Job;
-import hudson.model.JobPropertyDescriptor;
-import hudson.model.Label;
-import hudson.model.ListView;
-import hudson.model.LoadBalancer;
-import hudson.model.ManagementLink;
-import hudson.model.NoFingerprintMatch;
-import hudson.model.OverallLoadStatistics;
-import hudson.model.PaneStatusProperties;
-import hudson.model.Project;
+import hudson.model.*;
 import hudson.model.Queue.FlyweightTask;
-import hudson.model.RestartListener;
-import hudson.model.RootAction;
-import hudson.model.Slave;
-import hudson.model.TaskListener;
-import hudson.model.TopLevelItem;
-import hudson.model.TopLevelItemDescriptor;
-import hudson.model.UnprotectedRootAction;
-import hudson.model.UpdateCenter;
-import hudson.model.User;
-import hudson.model.View;
-import hudson.model.ViewGroupMixIn;
 import hudson.model.Descriptor.FormException;
 import hudson.model.labels.LabelAtom;
 import hudson.model.listeners.ItemListener;
 import hudson.model.listeners.SCMListener;
 import hudson.model.listeners.SaveableListener;
-import hudson.model.Queue;
-import hudson.model.WorkspaceCleanupThread;
 
 import antlr.ANTLRException;
 import com.google.common.collect.ImmutableMap;
@@ -211,6 +162,7 @@ import org.acegisecurity.ui.AbstractProcessingFilter;
 import org.apache.commons.jelly.JellyException;
 import org.apache.commons.jelly.Script;
 import org.apache.commons.logging.LogFactory;
+import org.bson.types.ObjectId;
 import org.jvnet.hudson.reactor.Executable;
 import org.jvnet.hudson.reactor.ReactorException;
 import org.jvnet.hudson.reactor.Task;
@@ -2635,6 +2587,21 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
                     loadedNames.add(item.getName());
                 }
             });
+        }
+
+        List<Job> jobs = getDatastore().createQuery(Job.class).disableValidation().
+                field("parentId").equal(AbstractItem.JENKINS_ID).
+                asList();
+
+        for(Job job : jobs) {
+            if(job instanceof TopLevelItem) {
+                job.onLoad(this, job.getName());
+                TopLevelItem item = (TopLevelItem) job;
+                items.put(item.getName(), item);
+                loadedNames.add(item.getName());
+            } else {
+                LOGGER.warning("Attempting to load job that is not a top level item: " + job.getId());
+            }
         }
 
         g.requires(JOB_LOADED).add("Cleaning up old builds",new Executable() {
