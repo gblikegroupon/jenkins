@@ -33,6 +33,7 @@ import hudson.ExtensionComponent;
 import hudson.ExtensionFinder;
 import hudson.init.*;
 import hudson.model.*;
+import hudson.model.Messages;
 import hudson.model.Queue.FlyweightTask;
 import hudson.model.Descriptor.FormException;
 import hudson.model.labels.LabelAtom;
@@ -162,7 +163,6 @@ import org.acegisecurity.ui.AbstractProcessingFilter;
 import org.apache.commons.jelly.JellyException;
 import org.apache.commons.jelly.Script;
 import org.apache.commons.logging.LogFactory;
-import org.bson.types.ObjectId;
 import org.jvnet.hudson.reactor.Executable;
 import org.jvnet.hudson.reactor.ReactorException;
 import org.jvnet.hudson.reactor.Task;
@@ -193,12 +193,8 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.jelly.JellyClassLoaderTearOff;
 import org.kohsuke.stapler.jelly.JellyRequestDispatcher;
 import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.EntityInterceptor;
 import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.MappedClass;
-import org.mongodb.morphia.mapping.MappedField;
 import org.mongodb.morphia.mapping.Mapper;
-import org.mongodb.morphia.query.Query;
 import org.xml.sax.InputSource;
 
 import javax.crypto.SecretKey;
@@ -219,8 +215,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.net.BindException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -2589,6 +2583,7 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
             });
         }
 
+        /*
         List<Job> jobs = getDatastore().createQuery(Job.class).disableValidation().
                 field("parentId").equal(AbstractItem.JENKINS_ID).
                 asList();
@@ -2602,7 +2597,7 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
             } else {
                 LOGGER.warning("Attempting to load job that is not a top level item: " + job.getId());
             }
-        }
+        }*/
 
         g.requires(JOB_LOADED).add("Cleaning up old builds",new Executable() {
             public void run(Reactor reactor) throws Exception {
