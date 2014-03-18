@@ -23,6 +23,7 @@
  */
 package jenkins.model.lazy;
 
+import com.mongodb.WriteResult;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.RunMap;
@@ -608,16 +609,11 @@ public abstract class AbstractLazyLoadRunMap<R> extends AbstractMap<Integer,R> i
     protected abstract R retrieve(File dir) throws IOException;
 
     public synchronized boolean removeValue(R run) {
-        Index copy = copy();
-        int n = getNumberOf(run);
-        copy.byNumber.remove(n);
-        SortedIntList a = new SortedIntList(numberOnDisk);
-        a.removeValue(n);
-        numberOnDisk = a;
-        BuildReference<R> old = copy.byId.remove(getIdOf(run));
-        this.index = copy;
+        Datastore ds = Jenkins.getInstance().getDatastore();
 
-        return unwrap(old)!=null;
+        WriteResult result = ds.delete(run);
+
+        return result.getError() != null;
     }
 
     /**
