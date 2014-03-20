@@ -145,6 +145,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.interceptor.RequirePOST;
+import org.mongodb.morphia.annotations.PostLoad;
 
 /**
  * Base implementation of {@link Job}s that build software.
@@ -156,6 +157,12 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
  */
 @SuppressWarnings("rawtypes")
 public abstract class AbstractProject<P extends AbstractProject<P,R>,R extends AbstractBuild<P,R>> extends Job<P,R> implements BuildableItem, ModelObjectWithChildren {
+
+    @Override
+    @PostLoad public void postLoad() {
+        super.postLoad();
+        builds = createBuildRunMap(); //ensure that path is set for project
+    }
 
     /**
      * {@link SCM} associated with the project.

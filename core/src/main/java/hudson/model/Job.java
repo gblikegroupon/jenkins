@@ -116,7 +116,7 @@ import static javax.servlet.http.HttpServletResponse.*;
 public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, RunT>>
         extends AbstractItem implements ExtensionPoint, StaplerOverridable, OnMaster {
 
-    @PostLoad private void setAllPropertyOwner() {
+    @PostLoad private void setAllPropertyOwner() throws IOException {
         if(properties == null) {
             properties = new CopyOnWriteArrayList<JobProperty<? super JobT>>();
         } else {
@@ -124,6 +124,7 @@ public abstract class Job<JobT extends Job<JobT, RunT>, RunT extends Run<JobT, R
                 property.setOwner(this);
             }
         }
+        this.onLoad(this.getParent(),this.getName());
     }
 
     /**
