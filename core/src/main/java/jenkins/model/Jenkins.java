@@ -145,7 +145,7 @@ import jenkins.ExtensionComponentSet;
 import jenkins.ExtensionRefreshException;
 import jenkins.InitReactorRunner;
 import jenkins.model.ProjectNamingStrategy.DefaultProjectNamingStrategy;
-import jenkins.model.morphia.CustomMorphiaObjectFactory;
+import jenkins.model.morphia.MorphiaConfiguration;
 import jenkins.security.ConfidentialKey;
 import jenkins.security.ConfidentialStore;
 import jenkins.slaves.WorkspaceLocator;
@@ -193,8 +193,6 @@ import org.kohsuke.stapler.interceptor.RequirePOST;
 import org.kohsuke.stapler.jelly.JellyClassLoaderTearOff;
 import org.kohsuke.stapler.jelly.JellyRequestDispatcher;
 import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.mapping.Mapper;
 import org.xml.sax.InputSource;
 
 import javax.crypto.SecretKey;
@@ -256,6 +254,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import jenkins.security.SecurityListener;
+
 
 /**
  * Root object of the system.
@@ -334,9 +333,6 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
      */
     private volatile SecurityRealm securityRealm = SecurityRealm.NO_AUTHENTICATION;
 
-    public String dbHost = "localhost";
-    public int dbPort = 27017;
-    public String dbName = "test";
     private transient Datastore datastore;
 
     /**
@@ -2166,18 +2162,18 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
       if(datastore == null) {
         synchronized (datastoreLock) {
           if(datastore == null) {
-            Morphia morphia = new Morphia();
-            Mapper mapper = morphia.getMapper();
+              XmlFile configFile = new XmlFile(XSTREAM, new File(root,"mongo_config.xml"));
 
-            mapper.getOptions().actLikeSerializer = true;
-            mapper.getOptions().objectFactory = new CustomMorphiaObjectFactory();
+              MorphiaConfiguration config;
 
-                try{
-                  Mongo mongo = new Mongo(dbHost, dbPort);
-                  datastore = morphia.createDatastore(mongo, dbName);
-                } catch (Exception ex) {
-                  throw new RuntimeException(ex);
-                }
+              try{
+                config = (MorphiaConfiguration) configFile.read();
+                datastore = config.makeDatastore();
+              } catch(IOException ex) {
+                throw new RuntimeException("Unable to read configuration file for MongoDB");
+              }
+
+              datastore = config.makeDatastore();
           }
         }
       }
@@ -2583,7 +2579,7 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
             });
         }
 
-        /*
+
         List<Job> jobs = getDatastore().createQuery(Job.class).disableValidation().
                 field("parentId").equal(AbstractItem.JENKINS_ID).
                 asList();
@@ -2597,7 +2593,7 @@ public class Jenkins extends AbstractCIBase implements DirectlyModifiableTopLeve
             } else {
                 LOGGER.warning("Attempting to load job that is not a top level item: " + job.getId());
             }
-        }*/
+        }
 
         g.requires(JOB_LOADED).add("Cleaning up old builds",new Executable() {
             public void run(Reactor reactor) throws Exception {
